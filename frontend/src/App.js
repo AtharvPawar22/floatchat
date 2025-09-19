@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Globe3D from "./components/Globe3D";
 import MapFallback from "./components/MapFallback";
 import EnhancedFloatDataPanel from "./components/EnhancedFloatDataPanel";
 import ChatSection from "./components/ChatSection";
@@ -11,7 +12,7 @@ import { Waves, Info, Maximize2, Minimize2, Zap } from "lucide-react";
 
 const FloatChat = () => {
   const [selectedFloat, setSelectedFloat] = useState(null);
-  const [viewMode, setViewMode] = useState('2d');
+  const [viewMode, setViewMode] = useState('3d');
   const [showTrajectories, setShowTrajectories] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [realTimeMode, setRealTimeMode] = useState(true);
@@ -88,46 +89,56 @@ const FloatChat = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-blue-600/10 rounded-3xl blur-3xl" />
         
         <div className={`relative z-10 flex gap-6 px-6 py-8 ${isFullscreen ? 'h-screen' : ''}`}>
-          {/* Map Container */}
+          {/* Globe/Map Container */}
           <div className={`flex-1 relative ${isFullscreen ? 'h-full' : 'min-h-[700px]'}`}>
             <div className="absolute inset-0 bg-slate-900/30 rounded-2xl border border-cyan-500/20 overflow-hidden">
-              {/* Enhanced background effects */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 to-slate-900/50" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_70%)]" />
-              
-              {/* Animated grid */}
-              <div className="absolute inset-0 opacity-20">
-                {[...Array(12)].map((_, i) => (
-                  <div
-                    key={`h-${i}`}
-                    className="absolute w-full h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent animate-pulse"
-                    style={{ 
-                      top: `${(i + 1) * 8.33}%`,
-                      animationDelay: `${i * 0.5}s`,
-                      animationDuration: '3s'
-                    }}
+              {viewMode === '3d' ? (
+                <Globe3D 
+                  selectedFloat={selectedFloat} 
+                  onFloatSelect={handleFloatSelect}
+                  showTrajectories={showTrajectories}
+                />
+              ) : (
+                <>
+                  {/* Enhanced background effects for 2D mode */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 to-slate-900/50" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_70%)]" />
+                  
+                  {/* Animated grid for 2D mode */}
+                  <div className="absolute inset-0 opacity-20">
+                    {[...Array(12)].map((_, i) => (
+                      <div
+                        key={`h-${i}`}
+                        className="absolute w-full h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent animate-pulse"
+                        style={{ 
+                          top: `${(i + 1) * 8.33}%`,
+                          animationDelay: `${i * 0.5}s`,
+                          animationDuration: '3s'
+                        }}
+                      />
+                    ))}
+                    {[...Array(16)].map((_, i) => (
+                      <div
+                        key={`v-${i}`}
+                        className="absolute h-full w-px bg-gradient-to-b from-transparent via-cyan-500/20 to-transparent animate-pulse"
+                        style={{ 
+                          left: `${(i + 1) * 6.25}%`,
+                          animationDelay: `${i * 0.3}s`,
+                          animationDuration: '4s'
+                        }}
+                      />
+                    ))}
+                  </div>
+                  
+                  <MapFallback 
+                    selectedFloat={selectedFloat} 
+                    onFloatSelect={handleFloatSelect}
+                    showTrajectories={showTrajectories}
+                    realTimeMode={realTimeMode}
                   />
-                ))}
-                {[...Array(16)].map((_, i) => (
-                  <div
-                    key={`v-${i}`}
-                    className="absolute h-full w-px bg-gradient-to-b from-transparent via-cyan-500/20 to-transparent animate-pulse"
-                    style={{ 
-                      left: `${(i + 1) * 6.25}%`,
-                      animationDelay: `${i * 0.3}s`,
-                      animationDuration: '4s'
-                    }}
-                  />
-                ))}
-              </div>
+                </>
+              )}
             </div>
-            
-            <MapFallback 
-              selectedFloat={selectedFloat} 
-              onFloatSelect={handleFloatSelect}
-              showTrajectories={showTrajectories}
-              realTimeMode={realTimeMode}
-            />
             
             {/* Enhanced Instructions */}
             <div className="absolute bottom-6 left-6 bg-slate-900/80 backdrop-blur-sm rounded-lg p-4 border border-cyan-500/30">
@@ -136,7 +147,9 @@ const FloatChat = () => {
                 <span>Click on glowing points to explore float data</span>
               </div>
               <div className="flex items-center gap-2 text-gray-400 text-xs">
-                <span>Enhanced 2D Ocean Visualization • 6 Active Floats</span>
+                <span>
+                  {viewMode === '3d' ? '3D Globe • Drag to rotate • Scroll to zoom' : 'Enhanced 2D Ocean Map'} • 6 Active Floats
+                </span>
               </div>
             </div>
 
@@ -146,7 +159,7 @@ const FloatChat = () => {
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2 text-cyan-400 text-sm">
                     <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
-                    <span>Enhanced Ocean Map</span>
+                    <span>{viewMode === '3d' ? '3D Globe Mode' : 'Enhanced Ocean Map'}</span>
                   </div>
                   {realTimeMode && (
                     <div className="flex items-center gap-1 text-green-400 text-xs">
@@ -163,7 +176,7 @@ const FloatChat = () => {
               <div className="bg-slate-900/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-green-500/30">
                 <div className="flex items-center gap-2 text-green-400 text-xs">
                   <div className="w-2 h-2 bg-green-400 rounded-full" />
-                  <span>Optimized Mode</span>
+                  <span>{viewMode === '3d' ? '3D Optimized' : 'Optimized Mode'}</span>
                 </div>
               </div>
             </div>
@@ -187,7 +200,7 @@ const FloatChat = () => {
                   <span className="font-semibold text-cyan-400">ARGO Float Network</span>
                 </div>
                 <p className="text-gray-300 text-sm leading-relaxed mb-4">
-                  Explore real-time oceanographic data from autonomous profiling floats deployed across global oceans.
+                  Explore real-time oceanographic data from autonomous profiling floats deployed across global oceans in {viewMode === '3d' ? '3D' : '2D'} view.
                 </p>
                 <div className="space-y-2 text-xs text-gray-400">
                   <div className="flex items-center gap-2">
@@ -204,7 +217,7 @@ const FloatChat = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                    <span>Trajectory Path (When Enabled)</span>
+                    <span>Trajectory Path {showTrajectories ? '(Enabled)' : '(Disabled)'}</span>
                   </div>
                 </div>
               </div>
