@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Globe3D from "./components/Globe3D";
+import MapFallback from "./components/MapFallback";
 import FloatDataPanel from "./components/FloatDataPanel";
 import ChatSection from "./components/ChatSection";
 import FunFactsSection from "./components/FunFactsSection";
@@ -46,7 +46,7 @@ const FloatChat = () => {
           {/* Globe Container */}
           <div className="flex-1 min-h-[600px] relative">
             <div className="absolute inset-0 bg-slate-900/30 rounded-2xl border border-cyan-500/20" />
-            <Globe3D selectedFloat={selectedFloat} onFloatSelect={handleFloatSelect} />
+            <MapFallback selectedFloat={selectedFloat} onFloatSelect={handleFloatSelect} />
             
             {/* Instructions */}
             <div className="absolute bottom-6 left-6 bg-slate-900/80 backdrop-blur-sm rounded-lg p-4 border border-cyan-500/30">
