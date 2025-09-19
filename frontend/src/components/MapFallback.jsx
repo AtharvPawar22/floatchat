@@ -98,18 +98,43 @@ const MapFallback = ({ selectedFloat, onFloatSelect, showTrajectories = false, r
         return (
           <div key={float.id} className="absolute z-10">
             {/* Trajectory path */}
-            {showTrajectories && isSelected && (
-              <svg className="absolute pointer-events-none" width="200" height="200" 
-                   style={{ left: `${x - 5}%`, top: `${y - 5}%` }}>
+            {showTrajectories && (isSelected || float.id === selectedFloat?.id) && (
+              <svg className="absolute pointer-events-none z-20" width="300" height="200" 
+                   style={{ left: `${x - 8}%`, top: `${y - 8}%` }}>
+                <defs>
+                  <linearGradient id={`trajectory-gradient-${float.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style={{ stopColor: '#ff6b35', stopOpacity: 0.3 }} />
+                    <stop offset="50%" style={{ stopColor: '#ff6b35', stopOpacity: 0.7 }} />
+                    <stop offset="100%" style={{ stopColor: '#ff6b35', stopOpacity: 1 }} />
+                  </linearGradient>
+                </defs>
                 <path
-                  d={`M 20 20 Q 40 10 60 25 T 100 30 Q 120 35 140 25`}
-                  stroke="#ff6b35"
-                  strokeWidth="2"
+                  d={`M 30 30 Q 60 20 90 35 T 150 40 Q 180 45 210 35`}
+                  stroke={`url(#trajectory-gradient-${float.id})`}
+                  strokeWidth="3"
                   fill="none"
-                  opacity="0.6"
-                  strokeDasharray="5,5"
+                  opacity="0.8"
+                  strokeDasharray="8,4"
                   className="animate-pulse"
+                  style={{ animationDuration: '2s' }}
                 />
+                {/* Trajectory points */}
+                {[30, 90, 150, 210].map((cx, idx) => (
+                  <circle
+                    key={idx}
+                    cx={cx}
+                    cy={30 + Math.sin(idx) * 10}
+                    r="3"
+                    fill="#ff6b35"
+                    opacity="0.6"
+                    className="animate-ping"
+                    style={{ animationDelay: `${idx * 0.5}s`, animationDuration: '2s' }}
+                  />
+                ))}
+                {/* Trajectory label */}
+                <text x="120" y="20" fill="#ff6b35" fontSize="10" textAnchor="middle" opacity="0.8">
+                  Recent Path
+                </text>
               </svg>
             )}
             
