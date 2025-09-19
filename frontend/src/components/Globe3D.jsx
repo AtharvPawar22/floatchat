@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { mockFloats } from '../data/mockData';
+import MapFallback from './MapFallback';
 
 const FloatMarker = ({ position, float, onClick, isSelected }) => {
   const meshRef = useRef();
@@ -108,17 +109,32 @@ const LoadingFallback = () => (
   </div>
 );
 
-const ErrorFallback = () => (
-  <div className="w-full h-full flex items-center justify-center bg-slate-800/50 rounded-lg">
-    <div className="text-center">
-      <div className="text-red-400 text-lg mb-2">3D Visualization Unavailable</div>
-      <div className="text-gray-400 text-sm">WebGL not supported or disabled</div>
-    </div>
-  </div>
-);
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.log('Globe3D Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <MapFallback selectedFloat={this.props.selectedFloat} onFloatSelect={this.props.onFloatSelect} />;
+    }
+
+    return this.props.children;
+  }
+}
 
 const Globe3D = ({ selectedFloat, onFloatSelect }) => {
   const [hasWebGL, setHasWebGL] = useState(true);
+  const [use3D, setUse3D] = useState(true);
 
   useEffect(() => {
     // Check WebGL support
@@ -127,33 +143,37 @@ const Globe3D = ({ selectedFloat, onFloatSelect }) => {
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
       if (!gl) {
         setHasWebGL(false);
+        setUse3D(false);
       }
     } catch (e) {
       setHasWebGL(false);
+      setUse3D(false);
     }
   }, []);
 
-  if (!hasWebGL) {
-    return <ErrorFallback />;
+  if (!hasWebGL || !use3D) {
+    return <MapFallback selectedFloat={selectedFloat} onFloatSelect={onFloatSelect} />;
   }
 
   return (
     <div className="w-full h-full">
-      <Suspense fallback={<LoadingFallback />}>
-        <Canvas
-          camera={{ position: [0, 0, 3], fov: 45 }}
-          gl={{ 
-            antialias: true, 
-            alpha: true,
-            powerPreference: "high-performance"
-          }}
-          onCreated={({ gl }) => {
-            gl.setClearColor('#000000', 0);
-          }}
-        >
-          <Scene selectedFloat={selectedFloat} onFloatSelect={onFloatSelect} />
-        </Canvas>
-      </Suspense>
+      <ErrorBoundary selectedFloat={selectedFloat} onFloatSelect={onFloatSelect}>
+        <Suspense fallback={<LoadingFallback />}>
+          <Canvas
+            camera={{ position: [0, 0, 3], fov: 45 }}
+            gl={{ 
+              antialias: true, 
+              alpha: true,
+              powerPreference: "high-performance"
+            }}
+            onCreated={({ gl }) => {
+              gl.setClearColor('#000000', 0);
+            }}
+          >
+            <Scene selectedFloat={selectedFloat} onFloatSelect={onFloatSelect} />
+          </Canvas>
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 };
