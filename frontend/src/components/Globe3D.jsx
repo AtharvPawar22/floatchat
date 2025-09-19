@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Sphere, Html } from '@react-three/drei';
+import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { mockFloats } from '../data/mockData';
 
@@ -17,7 +17,10 @@ const FloatMarker = ({ position, float, onClick, isSelected }) => {
     <group position={position}>
       <mesh
         ref={meshRef}
-        onClick={() => onClick(float)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick(float);
+        }}
         onPointerOver={(e) => {
           e.stopPropagation();
           document.body.style.cursor = 'pointer';
@@ -55,9 +58,6 @@ const Earth = () => {
     }
   });
 
-  // Create earth texture
-  const textureLoader = new THREE.TextureLoader();
-  
   return (
     <mesh ref={earthRef}>
       <sphereGeometry args={[1, 64, 64]} />
@@ -71,38 +71,89 @@ const Earth = () => {
   );
 };
 
+const Scene = ({ selectedFloat, onFloatSelect }) => {
+  return (
+    <>
+      <ambientLight intensity={0.4} />
+      <pointLight position={[10, 10, 10]} intensity={1} />
+      <pointLight position={[-10, -10, -10]} intensity={0.5} />
+      
+      <Earth />
+      
+      {mockFloats.map((float) => (
+        <FloatMarker
+          key={float.id}
+          position={float.position}
+          float={float}
+          onClick={onFloatSelect}
+          isSelected={selectedFloat?.id === float.id}
+        />
+      ))}
+      
+      <OrbitControls
+        enableZoom={true}
+        enablePan={false}
+        enableRotate={true}
+        minDistance={2}
+        maxDistance={6}
+        autoRotate={false}
+      />
+    </>
+  );
+};
+
+const LoadingFallback = () => (
+  <div className="w-full h-full flex items-center justify-center">
+    <div className="text-cyan-400 text-lg">Loading 3D Globe...</div>
+  </div>
+);
+
+const ErrorFallback = () => (
+  <div className="w-full h-full flex items-center justify-center bg-slate-800/50 rounded-lg">
+    <div className="text-center">
+      <div className="text-red-400 text-lg mb-2">3D Visualization Unavailable</div>
+      <div className="text-gray-400 text-sm">WebGL not supported or disabled</div>
+    </div>
+  </div>
+);
+
 const Globe3D = ({ selectedFloat, onFloatSelect }) => {
+  const [hasWebGL, setHasWebGL] = useState(true);
+
+  useEffect(() => {
+    // Check WebGL support
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) {
+        setHasWebGL(false);
+      }
+    } catch (e) {
+      setHasWebGL(false);
+    }
+  }, []);
+
+  if (!hasWebGL) {
+    return <ErrorFallback />;
+  }
+
   return (
     <div className="w-full h-full">
-      <Canvas
-        camera={{ position: [0, 0, 3], fov: 45 }}
-        gl={{ antialias: true, alpha: true }}
-      >
-        <ambientLight intensity={0.4} />
-        <pointLight position={[10, 10, 10]} intensity={1} />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} />
-        
-        <Earth />
-        
-        {mockFloats.map((float) => (
-          <FloatMarker
-            key={float.id}
-            position={float.position}
-            float={float}
-            onClick={onFloatSelect}
-            isSelected={selectedFloat?.id === float.id}
-          />
-        ))}
-        
-        <OrbitControls
-          enableZoom={true}
-          enablePan={false}
-          enableRotate={true}
-          minDistance={2}
-          maxDistance={6}
-          autoRotate={false}
-        />
-      </Canvas>
+      <Suspense fallback={<LoadingFallback />}>
+        <Canvas
+          camera={{ position: [0, 0, 3], fov: 45 }}
+          gl={{ 
+            antialias: true, 
+            alpha: true,
+            powerPreference: "high-performance"
+          }}
+          onCreated={({ gl }) => {
+            gl.setClearColor('#000000', 0);
+          }}
+        >
+          <Scene selectedFloat={selectedFloat} onFloatSelect={onFloatSelect} />
+        </Canvas>
+      </Suspense>
     </div>
   );
 };
